@@ -10,7 +10,7 @@ import (
 
 func main() {
 	client := rolestrategy.NewClient(
-		"https://dev-sdas.changan.com/jenkins",
+		"https://127.0.0.1:8080/jenkins",
 		"admin",
 		"your-api-token",
 	)
@@ -61,3 +61,4 @@ func main() {
 	}
 	fmt.Println("Project Roles:", projectRoles) // 输出: [staging-reader prod-admin]
 }
+
