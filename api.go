@@ -274,7 +274,7 @@ func (c *Client) GetRole(roleType RoleType, roleName string) (*RoleInfo, error) 
 }
 
 // GetAllRoles gets all roles for a type
-func (c *Client) GetAllRoles(roleType RoleType) (map[string][]SIDEntry, error) {
+func (c *Client) GetAllRoles(roleType RoleType) (map[string][]interface{}, error) {
 	u := fmt.Sprintf("%s/getAllRoles?type=%s", strategyPrefix, url.QueryEscape(string(roleType)))
 	req, err := c.newRequest("GET", u, "")
 	if err != nil {
@@ -291,7 +291,7 @@ func (c *Client) GetAllRoles(roleType RoleType) (map[string][]SIDEntry, error) {
 		return nil, fmt.Errorf("get all roles failed: %d %s", resp.StatusCode, resp.Status)
 	}
 
-	var roles map[string][]SIDEntry
+	var roles map[string][]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&roles); err != nil {
 		return nil, err
 	}
@@ -401,3 +401,4 @@ func (c *Client) getRoleNames(roleType RoleType) ([]string, error) {
 
 	return roleNames, nil
 }
+
