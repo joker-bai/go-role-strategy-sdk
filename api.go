@@ -150,6 +150,7 @@ func (c *Client) assignRole(roleType RoleType, roleName, sid, param string) erro
 	// 如果新版本接口返回404，尝试使用老版本的接口
 	if resp.StatusCode == http.StatusNotFound {
 		// 老版本使用统一的assignRole接口
+		v.Set("sid", sid)
 		req, err := c.newRequest("POST", strategyPrefix+"/assignRole", v.Encode())
 		if err != nil {
 			return err
@@ -444,6 +445,7 @@ func (c *Client) getRoleNames(roleType RoleType) ([]string, error) {
 
 	return roleNames, nil
 }
+
 
 
 
