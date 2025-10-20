@@ -274,7 +274,7 @@ func (c *Client) GetRole(roleType RoleType, roleName string) (*RoleInfo, error) 
 }
 
 // GetAllRoles gets all roles for a type
-func (c *Client) GetAllRoles(roleType RoleType) (map[string][]interface{}, error) {
+func (c *Client) GetAllRoles(roleType RoleType) (map[string][]SIDEntry, error) {
 	u := fmt.Sprintf("%s/getAllRoles?type=%s", strategyPrefix, url.QueryEscape(string(roleType)))
 	req, err := c.newRequest("GET", u, "")
 	if err != nil {
@@ -291,10 +291,34 @@ func (c *Client) GetAllRoles(roleType RoleType) (map[string][]interface{}, error
 		return nil, fmt.Errorf("get all roles failed: %d %s", resp.StatusCode, resp.Status)
 	}
 
-	var roles map[string][]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&roles); err != nil {
+	// 尝试解析为新版本格式（SIDEntry对象数组）
+	var roles map[string][]SIDEntry
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
+
+	if err := json.Unmarshal(bodyBytes, &roles); err != nil {
+		// 如果解析新版本格式失败，尝试解析为旧版本格式（字符串数组）
+		var oldFormatRoles map[string][]string
+		if err := json.Unmarshal(bodyBytes, &oldFormatRoles); err != nil {
+			return nil, err
+		}
+
+		// 将旧格式转换为新格式
+		roles = make(map[string][]SIDEntry)
+		for roleName, sids := range oldFormatRoles {
+			sidEntries := make([]SIDEntry, 0, len(sids))
+			for _, sid := range sids {
+				sidEntries = append(sidEntries, SIDEntry{
+					Type: "USER", // 默认为USER类型，因为旧格式没有提供类型信息
+					SID:  sid,
+				})
+			}
+			roles[roleName] = sidEntries
+		}
+	}
+
 	return roles, nil
 }
 
@@ -401,4 +425,5 @@ func (c *Client) getRoleNames(roleType RoleType) ([]string, error) {
 
 	return roleNames, nil
 }
+
 
