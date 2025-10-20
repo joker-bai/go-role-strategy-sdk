@@ -130,6 +130,7 @@ func (c *Client) assignRole(roleType RoleType, roleName, sid, param string) erro
 	v.Set("roleName", roleName)
 	v.Set(param, sid)
 
+	// 尝试使用新版本的接口
 	endpoint := "assignUserRole"
 	if param == "group" {
 		endpoint = "assignGroupRole"
@@ -144,11 +145,29 @@ func (c *Client) assignRole(roleType RoleType, roleName, sid, param string) erro
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	// 如果新版本接口返回404，尝试使用老版本的接口
+	if resp.StatusCode == http.StatusNotFound {
+		// 老版本使用统一的assignRole接口
+		req, err := c.newRequest("POST", strategyPrefix+"/assignRole", v.Encode())
+		if err != nil {
+			return err
+		}
+
+		resp, err := c.HTTPClient.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("assign %s failed: %d %s", param, resp.StatusCode, resp.Status)
+		}
+	} else if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("assign %s failed: %d %s", param, resp.StatusCode, resp.Status)
 	}
+	
 	return nil
 }
 
@@ -425,5 +444,6 @@ func (c *Client) getRoleNames(roleType RoleType) ([]string, error) {
 
 	return roleNames, nil
 }
+
 
 
